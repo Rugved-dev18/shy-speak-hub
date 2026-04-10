@@ -14,7 +14,230 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      discussion_messages: {
+        Row: {
+          author_name: string
+          created_at: string
+          discussion_id: string
+          id: string
+          parent_id: string | null
+          support_count: number
+          text: string
+          user_id: string | null
+        }
+        Insert: {
+          author_name: string
+          created_at?: string
+          discussion_id: string
+          id?: string
+          parent_id?: string | null
+          support_count?: number
+          text: string
+          user_id?: string | null
+        }
+        Update: {
+          author_name?: string
+          created_at?: string
+          discussion_id?: string
+          id?: string
+          parent_id?: string | null
+          support_count?: number
+          text?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discussion_messages_discussion_id_fkey"
+            columns: ["discussion_id"]
+            isOneToOne: false
+            referencedRelation: "discussions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discussion_messages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "discussion_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discussions: {
+        Row: {
+          category: string
+          created_at: string
+          creator_id: string | null
+          id: string
+          participant_count: number
+          topic: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          creator_id?: string | null
+          id?: string
+          participant_count?: number
+          topic: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          creator_id?: string | null
+          id?: string
+          participant_count?: number
+          topic?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          anonymous_name: string
+          avatar_url: string | null
+          confidence_score: number
+          created_at: string
+          day_streak: number
+          display_name: string | null
+          id: string
+          questions_asked: number
+          sessions_joined: number
+          tasks_completed: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          anonymous_name: string
+          avatar_url?: string | null
+          confidence_score?: number
+          created_at?: string
+          day_streak?: number
+          display_name?: string | null
+          id?: string
+          questions_asked?: number
+          sessions_joined?: number
+          tasks_completed?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          anonymous_name?: string
+          avatar_url?: string | null
+          confidence_score?: number
+          created_at?: string
+          day_streak?: number
+          display_name?: string | null
+          id?: string
+          questions_asked?: number
+          sessions_joined?: number
+          tasks_completed?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          author_name: string
+          created_at: string
+          id: string
+          is_answered: boolean
+          is_pinned: boolean
+          session_id: string | null
+          tag: string
+          text: string
+          upvotes: number
+          user_id: string | null
+        }
+        Insert: {
+          author_name: string
+          created_at?: string
+          id?: string
+          is_answered?: boolean
+          is_pinned?: boolean
+          session_id?: string | null
+          tag?: string
+          text: string
+          upvotes?: number
+          user_id?: string | null
+        }
+        Update: {
+          author_name?: string
+          created_at?: string
+          id?: string
+          is_answered?: boolean
+          is_pinned?: boolean
+          session_id?: string | null
+          tag?: string
+          text?: string
+          upvotes?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          created_at: string
+          creator_id: string | null
+          id: string
+          is_live: boolean
+          mentor_name: string
+          participant_count: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id?: string | null
+          id?: string
+          is_live?: boolean
+          mentor_name: string
+          participant_count?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string | null
+          id?: string
+          is_live?: boolean
+          mentor_name?: string
+          participant_count?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      task_responses: {
+        Row: {
+          created_at: string
+          id: string
+          response_text: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          response_text: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          response_text?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

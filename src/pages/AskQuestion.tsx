@@ -4,29 +4,46 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { TAGS, generateAnonymousName, type Question } from "@/lib/store";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { TAGS } from "@/lib/store";
 
 export default function AskQuestion() {
   const [text, setText] = useState("");
   const [selectedTag, setSelectedTag] = useState("General");
-  const [submitted, setSubmitted] = useState<Question[]>([]);
   const { toast } = useToast();
-  const anonymousName = useState(() => generateAnonymousName())[0];
+  const { user, anonymousName } = useAuth();
 
-  const handleSubmit = () => {
-    if (!text.trim()) return;
-    const q: Question = {
-      id: crypto.randomUUID(),
+  const { data: questions = [], refetch } = useQuery({
+    queryKey: ["my-questions", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data } = await supabase
+        .from("questions")
+        .select("*")
+        .eq("user_id", user.id)
+        .is("session_id", null)
+        .order("created_at", { ascending: false });
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const handleSubmit = async () => {
+    if (!text.trim() || !user) return;
+    const { error } = await supabase.from("questions").insert({
       text: text.trim(),
-      author: anonymousName,
+      author_name: anonymousName,
       tag: selectedTag,
-      timestamp: new Date(),
-      upvotes: 0,
-      isPinned: false,
-      isAnswered: false,
-    };
-    setSubmitted((prev) => [q, ...prev]);
+      user_id: user.id,
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
     setText("");
+    refetch();
     toast({ title: "Question submitted! 🎉", description: "Your anonymous question has been sent safely." });
   };
 
@@ -48,7 +65,6 @@ export default function AskQuestion() {
             onChange={(e) => setText(e.target.value)}
             className="min-h-[120px] resize-none border-0 bg-transparent p-0 text-base focus-visible:ring-0"
           />
-
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <Tag className="h-4 w-4 text-muted-foreground" />
             {TAGS.map((tag) => (
@@ -62,7 +78,6 @@ export default function AskQuestion() {
               </Badge>
             ))}
           </div>
-
           <div className="mt-4 flex justify-end">
             <Button onClick={handleSubmit} disabled={!text.trim()} className="gradient-primary border-0 text-primary-foreground">
               <Send className="mr-2 h-4 w-4" /> Submit Question
@@ -70,16 +85,16 @@ export default function AskQuestion() {
           </div>
         </div>
 
-        {submitted.length > 0 && (
+        {questions.length > 0 && (
           <div className="mt-10">
             <h2 className="font-display text-lg font-semibold text-foreground mb-4">Your Submitted Questions</h2>
             <div className="space-y-3">
-              {submitted.map((q) => (
+              {questions.map((q) => (
                 <div key={q.id} className="rounded-lg border border-border bg-card p-4 shadow-card animate-scale-in">
                   <p className="text-foreground">{q.text}</p>
                   <div className="mt-2 flex items-center gap-2">
                     <Badge variant="outline" className="text-xs">{q.tag}</Badge>
-                    <span className="text-xs text-muted-foreground">Just now</span>
+                    <span className="text-xs text-muted-foreground">{new Date(q.created_at).toLocaleString()}</span>
                   </div>
                 </div>
               ))}

@@ -24,16 +24,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const fetchProfile = async (userId: string) => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("anonymous_name")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (data?.anonymous_name) setAnonymousName(data.anonymous_name);
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        // Fetch profile for anonymous name
-        const { data } = await supabase
-          .from("profiles")
-          .select("anonymous_name")
-          .eq("user_id", session.user.id)
-          .single();
-        if (data) setAnonymousName(data.anonymous_name);
+        // Defer Supabase call to avoid deadlock with auth callback
+        setTimeout(() => fetchProfile(session.user.id), 0);
       }
       setIsLoading(false);
     });
@@ -41,11 +45,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
+        fetchProfile(session.user.id);
         setIsLoading(false);
       } else {
-        // Auto sign in anonymously
         supabase.auth.signInAnonymously().then(({ data }) => {
-          if (data.user) setUser(data.user);
+          if (data.user) {
+            setUser(data.user);
+            fetchProfile(data.user.id);
+          }
+          setIsLoading(false);
         });
       }
     });

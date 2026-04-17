@@ -43,50 +43,79 @@ export default function GroupTasks() {
   };
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-10">
+    <div className="container mx-auto max-w-3xl px-6 py-10 md:px-4 animate-page-in">
       <div className="animate-fade-up">
-        <h1 className="font-display text-3xl font-bold text-foreground">Group Tasks</h1>
+        <h1 className="font-display text-4xl font-medium text-foreground" style={{ fontVariationSettings: '"opsz" 96' }}>
+          Group <span className="font-italic-display text-coral">Tasks</span>
+        </h1>
         <p className="mt-2 text-muted-foreground">Gentle challenges to practice communication. No pressure, just growth.</p>
 
-        <div className="mt-8 space-y-4">
-          {SAMPLE_TASKS.map((task) => (
-            <div key={task.id} className={`rounded-xl border p-6 shadow-card transition-all ${completedTasks.includes(task.id) ? "border-mint bg-mint-light" : "border-border bg-card"}`}>
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    {task.isActive ? (
-                      <Badge className="bg-peach text-primary-foreground border-0"><Sparkles className="mr-1 h-3 w-3" /> Active</Badge>
-                    ) : (
-                      <Badge variant="outline">Upcoming</Badge>
-                    )}
-                    {completedTasks.includes(task.id) && (
-                      <Badge className="bg-mint text-primary-foreground border-0"><CheckCircle className="mr-1 h-3 w-3" /> Completed</Badge>
-                    )}
+        <div className="mt-8 space-y-4 animate-stagger">
+          {SAMPLE_TASKS.map((task, idx) => {
+            const isCompleted = completedTasks.includes(task.id);
+            const progress = isCompleted ? 100 : task.isActive ? Math.min(20 + idx * 15, 70) : 0;
+            return (
+              <div
+                key={task.id}
+                className={`relative rounded-2xl border p-6 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-hover overflow-hidden ${
+                  isCompleted ? "border-mint bg-mint-light/40" : "border-border bg-card"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      {task.isActive ? (
+                        <Badge className="bg-coral text-primary-foreground border-0 font-medium">
+                          <Sparkles className="mr-1 h-3 w-3" /> Active
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-muted text-muted-foreground border-border">Upcoming</Badge>
+                      )}
+                      {isCompleted && (
+                        <Badge className="bg-mint text-foreground border-0 font-medium">
+                          <CheckCircle className="mr-1 h-3 w-3" /> Completed
+                        </Badge>
+                      )}
+                    </div>
+                    <h3 className="font-display text-xl font-semibold text-foreground">{task.title}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{task.description}</p>
+                    <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Timer className="h-3 w-3" /> {task.timeLimit} min</span>
+                      <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {task.participants.length} joined</span>
+                    </div>
                   </div>
-                  <h3 className="font-display text-lg font-semibold text-foreground">{task.title}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{task.description}</p>
-                  <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><Timer className="h-3 w-3" /> {task.timeLimit} min</span>
-                    <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {task.participants.length} joined</span>
-                  </div>
+                  {!isCompleted && task.isActive && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-[1.5px] border-violet text-violet hover:bg-violet hover:text-primary-foreground transition-colors"
+                      onClick={() => setActiveTaskId(activeTaskId === task.id ? null : task.id)}
+                    >
+                      {activeTaskId === task.id ? "Close" : "Participate"}
+                    </Button>
+                  )}
                 </div>
-                {!completedTasks.includes(task.id) && task.isActive && (
-                  <Button variant="outline" size="sm" onClick={() => setActiveTaskId(activeTaskId === task.id ? null : task.id)}>
-                    {activeTaskId === task.id ? "Close" : "Participate"}
-                  </Button>
+                {activeTaskId === task.id && (
+                  <div className="mt-4 rounded-xl bg-violet/5 border border-violet/10 p-4 animate-scale-in">
+                    <p className="text-sm text-muted-foreground mb-3 italic">Prompt: "{task.prompt}"</p>
+                    <Textarea placeholder="Your response..." value={response} onChange={(e) => setResponse(e.target.value)} className="min-h-[80px] resize-none rounded-xl" />
+                    <div className="mt-3 flex justify-end">
+                      <Button onClick={() => submitResponse(task.id)} disabled={!response.trim()} size="sm" className="btn-shimmer bg-violet hover:bg-violet-deep text-primary-foreground border-0">Submit Response</Button>
+                    </div>
+                  </div>
+                )}
+                {/* Progress bar */}
+                {(task.isActive || isCompleted) && (
+                  <div className="absolute left-0 right-0 bottom-0 h-1 bg-muted">
+                    <div
+                      className={`h-full transition-all duration-700 ${isCompleted ? "bg-mint" : "bg-coral"}`}
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
                 )}
               </div>
-              {activeTaskId === task.id && (
-                <div className="mt-4 rounded-lg bg-muted p-4 animate-scale-in">
-                  <p className="text-sm text-muted-foreground mb-3 italic">Prompt: "{task.prompt}"</p>
-                  <Textarea placeholder="Your response..." value={response} onChange={(e) => setResponse(e.target.value)} className="min-h-[80px] resize-none" />
-                  <div className="mt-3 flex justify-end">
-                    <Button onClick={() => submitResponse(task.id)} disabled={!response.trim()} size="sm" className="gradient-primary border-0 text-primary-foreground">Submit Response</Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

@@ -39,10 +39,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
+      if (session?.user) {
+        setUser(session.user);
+        setIsLoading(false);
+      } else {
         // Auto sign in anonymously
         supabase.auth.signInAnonymously().then(({ data }) => {
-          setUser(data.user);
+          if (data.user) setUser(data.user);
         });
       }
     });

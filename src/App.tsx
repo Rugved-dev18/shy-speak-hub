@@ -25,17 +25,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Navbar />
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/ask" element={<AskQuestion />} />
-            <Route path="/sessions" element={<Sessions />} />
-            <Route path="/session/:id" element={<SessionDetail />} />
-            <Route path="/community" element={<Community />} />
-            <Route path="/tasks" element={<GroupTasks />} />
-            <Route path="/conversations" element={<Conversations />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AnimatedRoutes />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

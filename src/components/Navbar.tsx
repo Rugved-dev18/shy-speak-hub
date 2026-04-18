@@ -82,17 +82,70 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{anonymousName}</span>
-          {isAnonymous ? (
-            <Button variant="outline" size="sm" className="border-[1.5px] border-violet text-violet hover:bg-violet hover:text-primary-foreground transition-colors" onClick={handleGoogleSignIn}>
-              <LogIn className="mr-1 h-4 w-4" /> Sign in with Google
-            </Button>
-          ) : (
-            <Button variant="ghost" size="sm" onClick={signOut}>Sign out</Button>
-          )}
           <Button size="sm" className="btn-shimmer bg-violet hover:bg-violet-deep text-primary-foreground border-0" asChild>
             <Link to="/ask">Ask Anonymously</Link>
           </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-violet/10 transition-colors border border-border/60"
+                aria-label="Open profile"
+              >
+                <Avatar className="h-7 w-7">
+                  <AvatarFallback className="bg-violet text-primary-foreground text-xs font-semibold">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-xs font-medium text-foreground">{anonymousName}</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-72 p-0 overflow-hidden">
+              <div className="bg-gradient-to-br from-violet/10 to-coral/10 p-4 flex items-center gap-3 border-b border-border/60">
+                <Avatar className="h-12 w-12">
+                  <AvatarFallback className="bg-violet text-primary-foreground text-base font-semibold">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="font-display text-base font-semibold text-foreground truncate">{anonymousName}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {isAnonymous ? "Anonymous Guest" : user?.email ?? "Signed in"}
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 divide-x divide-border/60 border-b border-border/60 text-center">
+                <div className="p-3">
+                  <TrendingUp className="h-4 w-4 text-violet mx-auto mb-1" />
+                  <p className="text-sm font-semibold text-foreground">{profile?.confidence_score ?? 0}%</p>
+                  <p className="text-[10px] text-muted-foreground">Confidence</p>
+                </div>
+                <div className="p-3">
+                  <Calendar className="h-4 w-4 text-coral mx-auto mb-1" />
+                  <p className="text-sm font-semibold text-foreground">{profile?.day_streak ?? 0}</p>
+                  <p className="text-[10px] text-muted-foreground">Streak</p>
+                </div>
+                <div className="p-3">
+                  <Target className="h-4 w-4 text-mint mx-auto mb-1" />
+                  <p className="text-sm font-semibold text-foreground">{profile?.tasks_completed ?? 0}</p>
+                  <p className="text-[10px] text-muted-foreground">Tasks</p>
+                </div>
+              </div>
+              <div className="p-2">
+                <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+                  <Link to="/dashboard"><UserIcon className="mr-2 h-4 w-4" /> View full profile</Link>
+                </Button>
+                {isAnonymous ? (
+                  <Button variant="ghost" size="sm" className="w-full justify-start text-violet" onClick={handleGoogleSignIn}>
+                    <LogIn className="mr-2 h-4 w-4" /> Sign in with Google
+                  </Button>
+                ) : (
+                  <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground" onClick={signOut}>
+                    <LogOut className="mr-2 h-4 w-4" /> Sign out
+                  </Button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <button

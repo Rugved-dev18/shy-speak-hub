@@ -113,8 +113,11 @@ export default function Navbar() {
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-                <div className="min-w-0">
-                  <p className="font-display text-base font-semibold text-foreground truncate">{anonymousName}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-display text-base font-semibold text-foreground truncate">{anonymousName}</p>
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${roleClass}`}>{roleLabel}</span>
+                  </div>
                   <p className="text-xs text-muted-foreground truncate">
                     {isAnonymous ? "Anonymous Guest" : user?.email ?? "Signed in"}
                   </p>

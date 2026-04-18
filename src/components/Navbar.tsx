@@ -88,15 +88,14 @@ export default function Navbar() {
           <Popover>
             <PopoverTrigger asChild>
               <button
-                className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-violet/10 transition-colors border border-border/60"
+                className="rounded-full hover:ring-2 hover:ring-violet/30 transition-all"
                 aria-label="Open profile"
               >
-                <Avatar className="h-7 w-7">
+                <Avatar className="h-9 w-9">
                   <AvatarFallback className="bg-violet text-primary-foreground text-xs font-semibold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-xs font-medium text-foreground">{anonymousName}</span>
               </button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-72 p-0 overflow-hidden">

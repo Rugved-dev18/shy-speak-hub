@@ -23,6 +23,13 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { user, anonymousName, signOut } = useAuth();
+  const { isAdmin, isMentor } = useUserRoles();
+  const roleLabel = isAdmin ? "Admin" : isMentor ? "Mentor" : (user?.is_anonymous ? "Guest" : "Member");
+  const roleClass = isAdmin
+    ? "bg-coral text-primary-foreground"
+    : isMentor
+    ? "bg-violet text-primary-foreground"
+    : "bg-muted text-muted-foreground";
 
   const { data: profile } = useQuery({
     queryKey: ["navbar-profile", user?.id],

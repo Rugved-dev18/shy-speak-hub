@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useUserRoles } from "@/hooks/useUserRoles";
 
 const navItems = [
   { label: "Home", path: "/" },

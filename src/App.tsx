@@ -13,6 +13,8 @@ import Community from "@/pages/Community";
 import GroupTasks from "@/pages/GroupTasks";
 import Conversations from "@/pages/Conversations";
 import Dashboard from "@/pages/Dashboard";
+import BecomeMentor from "@/pages/BecomeMentor";
+import AdminMentors from "@/pages/AdminMentors";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +32,8 @@ function AnimatedRoutes() {
         <Route path="/tasks" element={<GroupTasks />} />
         <Route path="/conversations" element={<Conversations />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/become-mentor" element={<BecomeMentor />} />
+        <Route path="/admin/mentors" element={<AdminMentors />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>

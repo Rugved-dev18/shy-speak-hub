@@ -144,6 +144,16 @@ export default function Navbar() {
                 <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
                   <Link to="/dashboard"><UserIcon className="mr-2 h-4 w-4" /> View full profile</Link>
                 </Button>
+                {!isMentor && !isAnonymous && (
+                  <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+                    <Link to="/become-mentor"><GraduationCap className="mr-2 h-4 w-4" /> Become a mentor</Link>
+                  </Button>
+                )}
+                {isAdmin && (
+                  <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+                    <Link to="/admin/mentors"><ShieldCheck className="mr-2 h-4 w-4" /> Mentor applications</Link>
+                  </Button>
+                )}
                 {isAnonymous ? (
                   <Button variant="ghost" size="sm" className="w-full justify-start text-violet" onClick={handleGoogleSignIn}>
                     <LogIn className="mr-2 h-4 w-4" /> Sign in with Google

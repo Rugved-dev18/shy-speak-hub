@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, MessageCircle, LogIn, User as UserIcon, LogOut, TrendingUp, Calendar, Target } from "lucide-react";
+import { Menu, X, MessageCircle, LogIn, User as UserIcon, LogOut, TrendingUp, Calendar, Target, GraduationCap, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, MessageCircle, LogIn, User as UserIcon, LogOut, TrendingUp, Calendar, Target } from "lucide-react";
+import { Menu, X, MessageCircle, LogIn, User as UserIcon, LogOut, TrendingUp, Calendar, Target, GraduationCap, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useUserRoles } from "@/hooks/useUserRoles";
 
 const navItems = [
   { label: "Home", path: "/" },
@@ -22,6 +23,13 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { user, anonymousName, signOut } = useAuth();
+  const { isAdmin, isMentor } = useUserRoles();
+  const roleLabel = isAdmin ? "Admin" : isMentor ? "Mentor" : (user?.is_anonymous ? "Guest" : "Member");
+  const roleClass = isAdmin
+    ? "bg-coral text-primary-foreground"
+    : isMentor
+    ? "bg-violet text-primary-foreground"
+    : "bg-muted text-muted-foreground";
 
   const { data: profile } = useQuery({
     queryKey: ["navbar-profile", user?.id],
@@ -105,8 +113,11 @@ export default function Navbar() {
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-                <div className="min-w-0">
-                  <p className="font-display text-base font-semibold text-foreground truncate">{anonymousName}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-display text-base font-semibold text-foreground truncate">{anonymousName}</p>
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${roleClass}`}>{roleLabel}</span>
+                  </div>
                   <p className="text-xs text-muted-foreground truncate">
                     {isAnonymous ? "Anonymous Guest" : user?.email ?? "Signed in"}
                   </p>
@@ -133,6 +144,16 @@ export default function Navbar() {
                 <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
                   <Link to="/dashboard"><UserIcon className="mr-2 h-4 w-4" /> View full profile</Link>
                 </Button>
+                {!isMentor && !isAnonymous && (
+                  <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+                    <Link to="/become-mentor"><GraduationCap className="mr-2 h-4 w-4" /> Become a mentor</Link>
+                  </Button>
+                )}
+                {isAdmin && (
+                  <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+                    <Link to="/admin/mentors"><ShieldCheck className="mr-2 h-4 w-4" /> Mentor applications</Link>
+                  </Button>
+                )}
                 {isAnonymous ? (
                   <Button variant="ghost" size="sm" className="w-full justify-start text-violet" onClick={handleGoogleSignIn}>
                     <LogIn className="mr-2 h-4 w-4" /> Sign in with Google

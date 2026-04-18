@@ -23,6 +23,18 @@ export default function Navbar() {
   const location = useLocation();
   const { user, anonymousName, signOut } = useAuth();
 
+  const { data: profile } = useQuery({
+    queryKey: ["navbar-profile", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const initials = anonymousName.replace(/\d+/g, "").match(/[A-Z][a-z]*/g)?.slice(0, 2).map(s => s[0]).join("") || "G";
+
   const isAnonymous = user?.is_anonymous;
 
   useEffect(() => {

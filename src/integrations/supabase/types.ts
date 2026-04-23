@@ -280,6 +280,42 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          created_at: string
+          creator_id: string
+          description: string
+          id: string
+          is_active: boolean
+          prompt: string
+          time_limit: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          description: string
+          id?: string
+          is_active?: boolean
+          prompt: string
+          time_limit?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          prompt?: string
+          time_limit?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

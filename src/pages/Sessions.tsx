@@ -49,7 +49,7 @@ export default function Sessions() {
   const [scheduledAt, setScheduledAt] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const { user, anonymousName } = useAuth();
-  const { isMentor } = useUserRoles();
+  const { isMentor, isAdmin } = useUserRoles();
   const { toast } = useToast();
 
   const { data: sessions = [], refetch } = useQuery({

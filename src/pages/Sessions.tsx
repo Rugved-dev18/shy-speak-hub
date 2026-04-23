@@ -192,20 +192,53 @@ export default function Sessions() {
                             <span className="flex items-center gap-1"><Users className="h-4 w-4" /> {session.participant_count} joined</span>
                           </div>
                         </div>
-                        <Button
-                          variant="outline"
-                          disabled={status === "ended"}
-                          className="shrink-0 border-[1.5px] border-violet text-violet hover:bg-violet hover:text-primary-foreground transition-colors disabled:opacity-50"
-                          asChild={status !== "ended"}
-                        >
-                          {status !== "ended" ? (
-                            <Link to={`/session/${session.id}`}>
-                              {status === "live" ? "Join" : "Details"} <ArrowRight className="ml-1 h-4 w-4" />
-                            </Link>
-                          ) : (
-                            <span>Ended</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {(session.creator_id === user?.id || isAdmin) && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                  aria-label="Delete session"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete this session?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently remove "{session.title}". This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteSession(session.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           )}
-                        </Button>
+                          <Button
+                            variant="outline"
+                            disabled={status === "ended"}
+                            className="border-[1.5px] border-violet text-violet hover:bg-violet hover:text-primary-foreground transition-colors disabled:opacity-50"
+                            asChild={status !== "ended"}
+                          >
+                            {status !== "ended" ? (
+                              <Link to={`/session/${session.id}`}>
+                                {status === "live" ? "Join" : "Details"} <ArrowRight className="ml-1 h-4 w-4" />
+                              </Link>
+                            ) : (
+                              <span>Ended</span>
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   );

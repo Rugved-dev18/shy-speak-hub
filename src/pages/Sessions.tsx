@@ -1,11 +1,22 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Radio, Users, ArrowRight, Clock, Plus, CalendarClock, GraduationCap } from "lucide-react";
+import { Radio, Users, ArrowRight, Clock, Plus, CalendarClock, GraduationCap, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRoles } from "@/hooks/useUserRoles";
@@ -38,7 +49,7 @@ export default function Sessions() {
   const [scheduledAt, setScheduledAt] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const { user, anonymousName } = useAuth();
-  const { isMentor } = useUserRoles();
+  const { isMentor, isAdmin } = useUserRoles();
   const { toast } = useToast();
 
   const { data: sessions = [], refetch } = useQuery({
@@ -67,6 +78,16 @@ export default function Sessions() {
     setDialogOpen(false);
     refetch();
     toast({ title: "Session created! 🎉" });
+  };
+
+  const deleteSession = async (id: string) => {
+    const { error } = await supabase.from("sessions").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Couldn't delete", description: error.message, variant: "destructive" });
+      return;
+    }
+    refetch();
+    toast({ title: "Session deleted" });
   };
 
   const groups = {
@@ -171,20 +192,53 @@ export default function Sessions() {
                             <span className="flex items-center gap-1"><Users className="h-4 w-4" /> {session.participant_count} joined</span>
                           </div>
                         </div>
-                        <Button
-                          variant="outline"
-                          disabled={status === "ended"}
-                          className="shrink-0 border-[1.5px] border-violet text-violet hover:bg-violet hover:text-primary-foreground transition-colors disabled:opacity-50"
-                          asChild={status !== "ended"}
-                        >
-                          {status !== "ended" ? (
-                            <Link to={`/session/${session.id}`}>
-                              {status === "live" ? "Join" : "Details"} <ArrowRight className="ml-1 h-4 w-4" />
-                            </Link>
-                          ) : (
-                            <span>Ended</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {(session.creator_id === user?.id || isAdmin) && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                  aria-label="Delete session"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete this session?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently remove "{session.title}". This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteSession(session.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           )}
-                        </Button>
+                          <Button
+                            variant="outline"
+                            disabled={status === "ended"}
+                            className="border-[1.5px] border-violet text-violet hover:bg-violet hover:text-primary-foreground transition-colors disabled:opacity-50"
+                            asChild={status !== "ended"}
+                          >
+                            {status !== "ended" ? (
+                              <Link to={`/session/${session.id}`}>
+                                {status === "live" ? "Join" : "Details"} <ArrowRight className="ml-1 h-4 w-4" />
+                              </Link>
+                            ) : (
+                              <span>Ended</span>
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   );

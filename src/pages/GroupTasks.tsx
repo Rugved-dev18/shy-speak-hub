@@ -15,6 +15,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,7 +58,7 @@ export default function GroupTasks() {
     isActive: true,
   });
   const { user } = useAuth();
-  const { isMentor } = useUserRoles();
+  const { isMentor, isAdmin } = useUserRoles();
   const { toast } = useToast();
 
   const { data: completedTasks = [], refetch: refetchCompleted } = useQuery({
@@ -240,7 +251,7 @@ export default function GroupTasks() {
           {tasks.map((task, idx) => {
             const isCompleted = completedTasks.includes(task.id);
             const progress = isCompleted ? 100 : task.isActive ? Math.min(20 + idx * 15, 70) : 0;
-            const canDelete = task.isCustom && (task.creatorId === user?.id);
+            const canDelete = task.isCustom && (task.creatorId === user?.id || isAdmin);
             return (
               <div
                 key={task.id}
@@ -276,14 +287,35 @@ export default function GroupTasks() {
                   </div>
                   <div className="flex items-center gap-2">
                     {canDelete && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteTask(task.id)}
-                        className="text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            aria-label="Delete task"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete this task?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently remove "{task.title}". This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteTask(task.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                     {!isCompleted && task.isActive && (
                       <Button

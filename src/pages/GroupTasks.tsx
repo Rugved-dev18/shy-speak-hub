@@ -58,7 +58,7 @@ export default function GroupTasks() {
     isActive: true,
   });
   const { user } = useAuth();
-  const { isMentor } = useUserRoles();
+  const { isMentor, isAdmin } = useUserRoles();
   const { toast } = useToast();
 
   const { data: completedTasks = [], refetch: refetchCompleted } = useQuery({

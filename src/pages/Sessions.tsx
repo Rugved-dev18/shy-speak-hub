@@ -80,6 +80,16 @@ export default function Sessions() {
     toast({ title: "Session created! 🎉" });
   };
 
+  const deleteSession = async (id: string) => {
+    const { error } = await supabase.from("sessions").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Couldn't delete", description: error.message, variant: "destructive" });
+      return;
+    }
+    refetch();
+    toast({ title: "Session deleted" });
+  };
+
   const groups = {
     live: sessions.filter((s) => getStatus(s) === "live"),
     upcoming: sessions.filter((s) => getStatus(s) === "upcoming"),

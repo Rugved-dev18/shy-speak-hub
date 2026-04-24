@@ -583,26 +583,58 @@ export default function GroupTasks() {
       </Dialog>
 
       {/* Confirm Save */}
-      <AlertDialog open={editConfirmOpen} onOpenChange={setEditConfirmOpen}>
+      <AlertDialog open={editConfirmOpen} onOpenChange={(o) => { setEditConfirmOpen(o); if (!o) setStaleConflict(false); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Save changes to this task?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Participants will see the updated challenge immediately. You can edit again at any time.
+            <AlertDialogTitle>
+              {staleConflict ? "This task has changed" : "Save changes to this task?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                {staleConflict ? (
+                  <p className="text-destructive">
+                    Saving is blocked because someone else updated this task since you opened it.
+                    Reload the latest version to continue editing.
+                  </p>
+                ) : (
+                  <p>Participants will see the updated challenge immediately. You can edit again at any time.</p>
+                )}
+                <div className="rounded-md border border-border bg-muted/40 p-3 text-xs space-y-1 font-mono">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Loaded version</span>
+                    <span className={staleConflict ? "text-destructive" : "text-foreground"}>
+                      {formatTimestamp(editTask?.updatedAt)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Latest on server</span>
+                    <span className={staleConflict ? "text-destructive font-semibold" : "text-foreground"}>
+                      {formatTimestamp(serverUpdatedAt)}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={editSubmitting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                confirmSaveEdit();
-              }}
-              disabled={editSubmitting}
-              className="bg-violet hover:bg-violet-deep text-primary-foreground"
-            >
-              {editSubmitting ? "Saving..." : "Confirm & Save"}
-            </AlertDialogAction>
+            {staleConflict ? (
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); reloadEditFromServer(); }}
+                disabled={editSubmitting}
+                className="bg-violet hover:bg-violet-deep text-primary-foreground"
+              >
+                Reload latest
+              </AlertDialogAction>
+            ) : (
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); confirmSaveEdit(); }}
+                disabled={editSubmitting}
+                className="bg-violet hover:bg-violet-deep text-primary-foreground"
+              >
+                {editSubmitting ? "Saving..." : "Confirm & Save"}
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

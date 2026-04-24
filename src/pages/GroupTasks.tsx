@@ -50,6 +50,16 @@ export default function GroupTasks() {
   const [response, setResponse] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [editTask, setEditTask] = useState<TaskItem | null>(null);
+  const [editConfirmOpen, setEditConfirmOpen] = useState(false);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    prompt: "",
+    timeLimit: 5,
+    isActive: true,
+  });
   const [form, setForm] = useState({
     title: "",
     description: "",

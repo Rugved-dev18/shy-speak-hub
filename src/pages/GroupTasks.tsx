@@ -170,6 +170,74 @@ export default function GroupTasks() {
     toast({ title: "Task removed" });
   };
 
+  const openEdit = (task: TaskItem) => {
+    setEditTask(task);
+    setEditForm({
+      title: task.title,
+      description: task.description,
+      prompt: task.prompt,
+      timeLimit: task.timeLimit,
+      isActive: task.isActive,
+    });
+  };
+
+  const requestSaveEdit = () => {
+    if (!editTask) return;
+    if (!editForm.title.trim() || !editForm.description.trim() || !editForm.prompt.trim()) {
+      toast({ title: "Please fill in all fields", variant: "destructive" });
+      return;
+    }
+    setEditConfirmOpen(true);
+  };
+
+  const confirmSaveEdit = async () => {
+    if (!editTask) return;
+    setEditSubmitting(true);
+    // Version-safe: only update if updated_at hasn't changed since we loaded it
+    const { data: current, error: fetchErr } = await supabase
+      .from("tasks")
+      .select("updated_at")
+      .eq("id", editTask.id)
+      .maybeSingle();
+    if (fetchErr || !current) {
+      setEditSubmitting(false);
+      setEditConfirmOpen(false);
+      toast({ title: "Couldn't load task", description: fetchErr?.message ?? "Not found", variant: "destructive" });
+      return;
+    }
+    const expectedUpdatedAt = (dbTasks.find((t) => t.id === editTask.id) as any)?.updated_at;
+    if (expectedUpdatedAt && current.updated_at !== expectedUpdatedAt) {
+      setEditSubmitting(false);
+      setEditConfirmOpen(false);
+      toast({
+        title: "Task changed elsewhere",
+        description: "This task was updated by someone else. Please reload before editing.",
+        variant: "destructive",
+      });
+      refetchTasks();
+      return;
+    }
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        title: editForm.title.trim(),
+        description: editForm.description.trim(),
+        prompt: editForm.prompt.trim(),
+        time_limit: editForm.timeLimit,
+        is_active: editForm.isActive,
+      })
+      .eq("id", editTask.id);
+    setEditSubmitting(false);
+    setEditConfirmOpen(false);
+    if (error) {
+      toast({ title: "Couldn't save", description: error.message, variant: "destructive" });
+      return;
+    }
+    setEditTask(null);
+    refetchTasks();
+    toast({ title: "Task updated ✨", description: "Your changes are live." });
+  };
+
   return (
     <div className="container mx-auto max-w-3xl px-6 py-10 md:px-4 animate-page-in">
       <div className="animate-fade-up">

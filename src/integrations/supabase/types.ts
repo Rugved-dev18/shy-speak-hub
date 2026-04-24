@@ -91,31 +91,76 @@ export type Database = {
       }
       mentor_applications: {
         Row: {
+          admin_feedback: string | null
+          availability: string | null
           bio: string
           created_at: string
+          cv_url: string | null
+          email: string | null
+          experience: string | null
           expertise: string
+          expertise_areas: string[] | null
+          full_name: string | null
           id: string
+          mentoring_style: string | null
+          motivation_text: string | null
+          organization: string | null
+          phone: string | null
+          portfolio_link: string | null
+          role: string | null
+          skills: string[] | null
           status: string
           updated_at: string
           user_id: string
+          value_text: string | null
         }
         Insert: {
+          admin_feedback?: string | null
+          availability?: string | null
           bio: string
           created_at?: string
+          cv_url?: string | null
+          email?: string | null
+          experience?: string | null
           expertise: string
+          expertise_areas?: string[] | null
+          full_name?: string | null
           id?: string
+          mentoring_style?: string | null
+          motivation_text?: string | null
+          organization?: string | null
+          phone?: string | null
+          portfolio_link?: string | null
+          role?: string | null
+          skills?: string[] | null
           status?: string
           updated_at?: string
           user_id: string
+          value_text?: string | null
         }
         Update: {
+          admin_feedback?: string | null
+          availability?: string | null
           bio?: string
           created_at?: string
+          cv_url?: string | null
+          email?: string | null
+          experience?: string | null
           expertise?: string
+          expertise_areas?: string[] | null
+          full_name?: string | null
           id?: string
+          mentoring_style?: string | null
+          motivation_text?: string | null
+          organization?: string | null
+          phone?: string | null
+          portfolio_link?: string | null
+          role?: string | null
+          skills?: string[] | null
           status?: string
           updated_at?: string
           user_id?: string
+          value_text?: string | null
         }
         Relationships: []
       }

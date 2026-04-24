@@ -116,6 +116,7 @@ export default function GroupTasks() {
       participants: [],
       creatorId: t.creator_id,
       isCustom: true,
+      updatedAt: t.updated_at,
     })),
     ...SAMPLE_TASKS.map((t) => ({
       id: t.id,

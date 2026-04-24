@@ -43,7 +43,17 @@ interface TaskItem {
   participants: string[];
   creatorId?: string | null;
   isCustom?: boolean;
+  updatedAt?: string;
 }
+
+const formatTimestamp = (iso?: string | null) => {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return iso;
+  }
+};
 
 export default function GroupTasks() {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
@@ -53,6 +63,8 @@ export default function GroupTasks() {
   const [editTask, setEditTask] = useState<TaskItem | null>(null);
   const [editConfirmOpen, setEditConfirmOpen] = useState(false);
   const [editSubmitting, setEditSubmitting] = useState(false);
+  const [serverUpdatedAt, setServerUpdatedAt] = useState<string | null>(null);
+  const [staleConflict, setStaleConflict] = useState(false);
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
@@ -104,6 +116,7 @@ export default function GroupTasks() {
       participants: [],
       creatorId: t.creator_id,
       isCustom: true,
+      updatedAt: t.updated_at,
     })),
     ...SAMPLE_TASKS.map((t) => ({
       id: t.id,
@@ -170,7 +183,18 @@ export default function GroupTasks() {
     toast({ title: "Task removed" });
   };
 
-  const openEdit = (task: TaskItem) => {
+  const fetchServerUpdatedAt = async (id: string): Promise<string | null> => {
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("updated_at")
+      .eq("id", id)
+      .maybeSingle();
+    if (error || !data) return null;
+    return data.updated_at as string;
+  };
+
+  const openEdit = async (task: TaskItem) => {
+    setStaleConflict(false);
     setEditTask(task);
     setEditForm({
       title: task.title,
@@ -179,41 +203,50 @@ export default function GroupTasks() {
       timeLimit: task.timeLimit,
       isActive: task.isActive,
     });
+    // Use loaded value optimistically, then refresh from server
+    setServerUpdatedAt(task.updatedAt ?? null);
+    const latest = await fetchServerUpdatedAt(task.id);
+    if (latest) setServerUpdatedAt(latest);
   };
 
-  const requestSaveEdit = () => {
+  const requestSaveEdit = async () => {
     if (!editTask) return;
     if (!editForm.title.trim() || !editForm.description.trim() || !editForm.prompt.trim()) {
       toast({ title: "Please fill in all fields", variant: "destructive" });
       return;
     }
+    // Re-check freshness before showing the confirmation
+    const latest = await fetchServerUpdatedAt(editTask.id);
+    if (!latest) {
+      toast({ title: "Couldn't load task", description: "It may have been removed.", variant: "destructive" });
+      return;
+    }
+    if (editTask.updatedAt && latest !== editTask.updatedAt) {
+      setServerUpdatedAt(latest);
+      setStaleConflict(true);
+      setEditConfirmOpen(true);
+      return;
+    }
+    setServerUpdatedAt(latest);
+    setStaleConflict(false);
     setEditConfirmOpen(true);
   };
 
   const confirmSaveEdit = async () => {
     if (!editTask) return;
     setEditSubmitting(true);
-    // Version-safe: only update if updated_at hasn't changed since we loaded it
-    const { data: current, error: fetchErr } = await supabase
-      .from("tasks")
-      .select("updated_at")
-      .eq("id", editTask.id)
-      .maybeSingle();
-    if (fetchErr || !current) {
+    // Final version check right before writing
+    const latest = await fetchServerUpdatedAt(editTask.id);
+    if (!latest) {
       setEditSubmitting(false);
       setEditConfirmOpen(false);
-      toast({ title: "Couldn't load task", description: fetchErr?.message ?? "Not found", variant: "destructive" });
+      toast({ title: "Couldn't load task", description: "It may have been removed.", variant: "destructive" });
       return;
     }
-    const expectedUpdatedAt = (dbTasks.find((t) => t.id === editTask.id) as any)?.updated_at;
-    if (expectedUpdatedAt && current.updated_at !== expectedUpdatedAt) {
+    if (editTask.updatedAt && latest !== editTask.updatedAt) {
+      setServerUpdatedAt(latest);
+      setStaleConflict(true);
       setEditSubmitting(false);
-      setEditConfirmOpen(false);
-      toast({
-        title: "Task changed elsewhere",
-        description: "This task was updated by someone else. Please reload before editing.",
-        variant: "destructive",
-      });
       refetchTasks();
       return;
     }
@@ -234,8 +267,47 @@ export default function GroupTasks() {
       return;
     }
     setEditTask(null);
+    setStaleConflict(false);
+    setServerUpdatedAt(null);
     refetchTasks();
     toast({ title: "Task updated ✨", description: "Your changes are live." });
+  };
+
+  const reloadEditFromServer = async () => {
+    if (!editTask) return;
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("id", editTask.id)
+      .maybeSingle();
+    if (error || !data) {
+      toast({ title: "Couldn't reload", description: error?.message ?? "Not found", variant: "destructive" });
+      return;
+    }
+    setEditTask({
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      prompt: data.prompt,
+      timeLimit: data.time_limit,
+      isActive: data.is_active,
+      participants: [],
+      creatorId: data.creator_id,
+      isCustom: true,
+      updatedAt: data.updated_at,
+    });
+    setEditForm({
+      title: data.title,
+      description: data.description,
+      prompt: data.prompt,
+      timeLimit: data.time_limit,
+      isActive: data.is_active,
+    });
+    setServerUpdatedAt(data.updated_at);
+    setStaleConflict(false);
+    setEditConfirmOpen(false);
+    refetchTasks();
+    toast({ title: "Reloaded latest version" });
   };
 
   return (
@@ -511,26 +583,58 @@ export default function GroupTasks() {
       </Dialog>
 
       {/* Confirm Save */}
-      <AlertDialog open={editConfirmOpen} onOpenChange={setEditConfirmOpen}>
+      <AlertDialog open={editConfirmOpen} onOpenChange={(o) => { setEditConfirmOpen(o); if (!o) setStaleConflict(false); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Save changes to this task?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Participants will see the updated challenge immediately. You can edit again at any time.
+            <AlertDialogTitle>
+              {staleConflict ? "This task has changed" : "Save changes to this task?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                {staleConflict ? (
+                  <p className="text-destructive">
+                    Saving is blocked because someone else updated this task since you opened it.
+                    Reload the latest version to continue editing.
+                  </p>
+                ) : (
+                  <p>Participants will see the updated challenge immediately. You can edit again at any time.</p>
+                )}
+                <div className="rounded-md border border-border bg-muted/40 p-3 text-xs space-y-1 font-mono">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Loaded version</span>
+                    <span className={staleConflict ? "text-destructive" : "text-foreground"}>
+                      {formatTimestamp(editTask?.updatedAt)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Latest on server</span>
+                    <span className={staleConflict ? "text-destructive font-semibold" : "text-foreground"}>
+                      {formatTimestamp(serverUpdatedAt)}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={editSubmitting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                confirmSaveEdit();
-              }}
-              disabled={editSubmitting}
-              className="bg-violet hover:bg-violet-deep text-primary-foreground"
-            >
-              {editSubmitting ? "Saving..." : "Confirm & Save"}
-            </AlertDialogAction>
+            {staleConflict ? (
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); reloadEditFromServer(); }}
+                disabled={editSubmitting}
+                className="bg-violet hover:bg-violet-deep text-primary-foreground"
+              >
+                Reload latest
+              </AlertDialogAction>
+            ) : (
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); confirmSaveEdit(); }}
+                disabled={editSubmitting}
+                className="bg-violet hover:bg-violet-deep text-primary-foreground"
+              >
+                {editSubmitting ? "Saving..." : "Confirm & Save"}
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -441,6 +441,99 @@ export default function GroupTasks() {
           })}
         </div>
       </div>
+
+      {/* Edit Task Dialog */}
+      <Dialog open={!!editTask} onOpenChange={(open) => !open && setEditTask(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit task</DialogTitle>
+            <DialogDescription>Refine your challenge. Changes go live after you confirm.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Title</Label>
+              <Input
+                id="edit-title"
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                className="min-h-[70px] resize-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-prompt">Prompt</Label>
+              <Textarea
+                id="edit-prompt"
+                value={editForm.prompt}
+                onChange={(e) => setEditForm({ ...editForm, prompt: e.target.value })}
+                className="min-h-[70px] resize-none"
+              />
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="space-y-2 flex-1">
+                <Label htmlFor="edit-timeLimit">Time limit (min)</Label>
+                <Input
+                  id="edit-timeLimit"
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={editForm.timeLimit}
+                  onChange={(e) => setEditForm({ ...editForm, timeLimit: Math.max(1, parseInt(e.target.value) || 1) })}
+                />
+              </div>
+              <div className="flex items-center gap-2 pt-6">
+                <Switch
+                  id="edit-isActive"
+                  checked={editForm.isActive}
+                  onCheckedChange={(checked) => setEditForm({ ...editForm, isActive: checked })}
+                />
+                <Label htmlFor="edit-isActive">Active</Label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditTask(null)}>Cancel</Button>
+            <Button
+              onClick={requestSaveEdit}
+              className="bg-violet hover:bg-violet-deep text-primary-foreground border-0"
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Save */}
+      <AlertDialog open={editConfirmOpen} onOpenChange={setEditConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save changes to this task?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Participants will see the updated challenge immediately. You can edit again at any time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={editSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmSaveEdit();
+              }}
+              disabled={editSubmitting}
+              className="bg-violet hover:bg-violet-deep text-primary-foreground"
+            >
+              {editSubmitting ? "Saving..." : "Confirm & Save"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

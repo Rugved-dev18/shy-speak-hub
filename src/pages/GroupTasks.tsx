@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Timer, Users, CheckCircle, Sparkles, Plus, Trash2 } from "lucide-react";
+import { Timer, Users, CheckCircle, Sparkles, Plus, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";

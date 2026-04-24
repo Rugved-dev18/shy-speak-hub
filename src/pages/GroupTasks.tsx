@@ -63,6 +63,8 @@ export default function GroupTasks() {
   const [editTask, setEditTask] = useState<TaskItem | null>(null);
   const [editConfirmOpen, setEditConfirmOpen] = useState(false);
   const [editSubmitting, setEditSubmitting] = useState(false);
+  const [serverUpdatedAt, setServerUpdatedAt] = useState<string | null>(null);
+  const [staleConflict, setStaleConflict] = useState(false);
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",

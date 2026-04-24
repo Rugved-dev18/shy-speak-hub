@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Timer, Users, CheckCircle, Sparkles, Plus, Trash2 } from "lucide-react";
+import { Timer, Users, CheckCircle, Sparkles, Plus, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,6 +50,16 @@ export default function GroupTasks() {
   const [response, setResponse] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [editTask, setEditTask] = useState<TaskItem | null>(null);
+  const [editConfirmOpen, setEditConfirmOpen] = useState(false);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    prompt: "",
+    timeLimit: 5,
+    isActive: true,
+  });
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -158,6 +168,74 @@ export default function GroupTasks() {
     }
     refetchTasks();
     toast({ title: "Task removed" });
+  };
+
+  const openEdit = (task: TaskItem) => {
+    setEditTask(task);
+    setEditForm({
+      title: task.title,
+      description: task.description,
+      prompt: task.prompt,
+      timeLimit: task.timeLimit,
+      isActive: task.isActive,
+    });
+  };
+
+  const requestSaveEdit = () => {
+    if (!editTask) return;
+    if (!editForm.title.trim() || !editForm.description.trim() || !editForm.prompt.trim()) {
+      toast({ title: "Please fill in all fields", variant: "destructive" });
+      return;
+    }
+    setEditConfirmOpen(true);
+  };
+
+  const confirmSaveEdit = async () => {
+    if (!editTask) return;
+    setEditSubmitting(true);
+    // Version-safe: only update if updated_at hasn't changed since we loaded it
+    const { data: current, error: fetchErr } = await supabase
+      .from("tasks")
+      .select("updated_at")
+      .eq("id", editTask.id)
+      .maybeSingle();
+    if (fetchErr || !current) {
+      setEditSubmitting(false);
+      setEditConfirmOpen(false);
+      toast({ title: "Couldn't load task", description: fetchErr?.message ?? "Not found", variant: "destructive" });
+      return;
+    }
+    const expectedUpdatedAt = (dbTasks.find((t) => t.id === editTask.id) as any)?.updated_at;
+    if (expectedUpdatedAt && current.updated_at !== expectedUpdatedAt) {
+      setEditSubmitting(false);
+      setEditConfirmOpen(false);
+      toast({
+        title: "Task changed elsewhere",
+        description: "This task was updated by someone else. Please reload before editing.",
+        variant: "destructive",
+      });
+      refetchTasks();
+      return;
+    }
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        title: editForm.title.trim(),
+        description: editForm.description.trim(),
+        prompt: editForm.prompt.trim(),
+        time_limit: editForm.timeLimit,
+        is_active: editForm.isActive,
+      })
+      .eq("id", editTask.id);
+    setEditSubmitting(false);
+    setEditConfirmOpen(false);
+    if (error) {
+      toast({ title: "Couldn't save", description: error.message, variant: "destructive" });
+      return;
+    }
+    setEditTask(null);
+    refetchTasks();
+    toast({ title: "Task updated ✨", description: "Your changes are live." });
   };
 
   return (
@@ -287,6 +365,17 @@ export default function GroupTasks() {
                   </div>
                   <div className="flex items-center gap-2">
                     {canDelete && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-violet hover:bg-violet/10"
+                        aria-label="Edit task"
+                        onClick={() => openEdit(task)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canDelete && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
@@ -352,6 +441,99 @@ export default function GroupTasks() {
           })}
         </div>
       </div>
+
+      {/* Edit Task Dialog */}
+      <Dialog open={!!editTask} onOpenChange={(open) => !open && setEditTask(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit task</DialogTitle>
+            <DialogDescription>Refine your challenge. Changes go live after you confirm.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Title</Label>
+              <Input
+                id="edit-title"
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                className="min-h-[70px] resize-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-prompt">Prompt</Label>
+              <Textarea
+                id="edit-prompt"
+                value={editForm.prompt}
+                onChange={(e) => setEditForm({ ...editForm, prompt: e.target.value })}
+                className="min-h-[70px] resize-none"
+              />
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="space-y-2 flex-1">
+                <Label htmlFor="edit-timeLimit">Time limit (min)</Label>
+                <Input
+                  id="edit-timeLimit"
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={editForm.timeLimit}
+                  onChange={(e) => setEditForm({ ...editForm, timeLimit: Math.max(1, parseInt(e.target.value) || 1) })}
+                />
+              </div>
+              <div className="flex items-center gap-2 pt-6">
+                <Switch
+                  id="edit-isActive"
+                  checked={editForm.isActive}
+                  onCheckedChange={(checked) => setEditForm({ ...editForm, isActive: checked })}
+                />
+                <Label htmlFor="edit-isActive">Active</Label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditTask(null)}>Cancel</Button>
+            <Button
+              onClick={requestSaveEdit}
+              className="bg-violet hover:bg-violet-deep text-primary-foreground border-0"
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Save */}
+      <AlertDialog open={editConfirmOpen} onOpenChange={setEditConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save changes to this task?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Participants will see the updated challenge immediately. You can edit again at any time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={editSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmSaveEdit();
+              }}
+              disabled={editSubmitting}
+              className="bg-violet hover:bg-violet-deep text-primary-foreground"
+            >
+              {editSubmitting ? "Saving..." : "Confirm & Save"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

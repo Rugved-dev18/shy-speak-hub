@@ -62,6 +62,9 @@ export default function Dashboard() {
       return data;
     },
     enabled: !!user,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+    staleTime: 0,
   });
 
   const stats = [

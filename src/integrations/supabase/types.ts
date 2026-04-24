@@ -353,6 +353,10 @@ export type Database = {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
       }
+      recompute_profile_counters: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "mentor" | "user"

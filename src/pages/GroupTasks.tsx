@@ -365,6 +365,17 @@ export default function GroupTasks() {
                   </div>
                   <div className="flex items-center gap-2">
                     {canDelete && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-violet hover:bg-violet/10"
+                        aria-label="Edit task"
+                        onClick={() => openEdit(task)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canDelete && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button

@@ -183,7 +183,18 @@ export default function GroupTasks() {
     toast({ title: "Task removed" });
   };
 
-  const openEdit = (task: TaskItem) => {
+  const fetchServerUpdatedAt = async (id: string): Promise<string | null> => {
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("updated_at")
+      .eq("id", id)
+      .maybeSingle();
+    if (error || !data) return null;
+    return data.updated_at as string;
+  };
+
+  const openEdit = async (task: TaskItem) => {
+    setStaleConflict(false);
     setEditTask(task);
     setEditForm({
       title: task.title,
@@ -192,41 +203,50 @@ export default function GroupTasks() {
       timeLimit: task.timeLimit,
       isActive: task.isActive,
     });
+    // Use loaded value optimistically, then refresh from server
+    setServerUpdatedAt(task.updatedAt ?? null);
+    const latest = await fetchServerUpdatedAt(task.id);
+    if (latest) setServerUpdatedAt(latest);
   };
 
-  const requestSaveEdit = () => {
+  const requestSaveEdit = async () => {
     if (!editTask) return;
     if (!editForm.title.trim() || !editForm.description.trim() || !editForm.prompt.trim()) {
       toast({ title: "Please fill in all fields", variant: "destructive" });
       return;
     }
+    // Re-check freshness before showing the confirmation
+    const latest = await fetchServerUpdatedAt(editTask.id);
+    if (!latest) {
+      toast({ title: "Couldn't load task", description: "It may have been removed.", variant: "destructive" });
+      return;
+    }
+    if (editTask.updatedAt && latest !== editTask.updatedAt) {
+      setServerUpdatedAt(latest);
+      setStaleConflict(true);
+      setEditConfirmOpen(true);
+      return;
+    }
+    setServerUpdatedAt(latest);
+    setStaleConflict(false);
     setEditConfirmOpen(true);
   };
 
   const confirmSaveEdit = async () => {
     if (!editTask) return;
     setEditSubmitting(true);
-    // Version-safe: only update if updated_at hasn't changed since we loaded it
-    const { data: current, error: fetchErr } = await supabase
-      .from("tasks")
-      .select("updated_at")
-      .eq("id", editTask.id)
-      .maybeSingle();
-    if (fetchErr || !current) {
+    // Final version check right before writing
+    const latest = await fetchServerUpdatedAt(editTask.id);
+    if (!latest) {
       setEditSubmitting(false);
       setEditConfirmOpen(false);
-      toast({ title: "Couldn't load task", description: fetchErr?.message ?? "Not found", variant: "destructive" });
+      toast({ title: "Couldn't load task", description: "It may have been removed.", variant: "destructive" });
       return;
     }
-    const expectedUpdatedAt = (dbTasks.find((t) => t.id === editTask.id) as any)?.updated_at;
-    if (expectedUpdatedAt && current.updated_at !== expectedUpdatedAt) {
+    if (editTask.updatedAt && latest !== editTask.updatedAt) {
+      setServerUpdatedAt(latest);
+      setStaleConflict(true);
       setEditSubmitting(false);
-      setEditConfirmOpen(false);
-      toast({
-        title: "Task changed elsewhere",
-        description: "This task was updated by someone else. Please reload before editing.",
-        variant: "destructive",
-      });
       refetchTasks();
       return;
     }
@@ -247,8 +267,47 @@ export default function GroupTasks() {
       return;
     }
     setEditTask(null);
+    setStaleConflict(false);
+    setServerUpdatedAt(null);
     refetchTasks();
     toast({ title: "Task updated ✨", description: "Your changes are live." });
+  };
+
+  const reloadEditFromServer = async () => {
+    if (!editTask) return;
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("id", editTask.id)
+      .maybeSingle();
+    if (error || !data) {
+      toast({ title: "Couldn't reload", description: error?.message ?? "Not found", variant: "destructive" });
+      return;
+    }
+    setEditTask({
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      prompt: data.prompt,
+      timeLimit: data.time_limit,
+      isActive: data.is_active,
+      participants: [],
+      creatorId: data.creator_id,
+      isCustom: true,
+      updatedAt: data.updated_at,
+    });
+    setEditForm({
+      title: data.title,
+      description: data.description,
+      prompt: data.prompt,
+      timeLimit: data.time_limit,
+      isActive: data.is_active,
+    });
+    setServerUpdatedAt(data.updated_at);
+    setStaleConflict(false);
+    setEditConfirmOpen(false);
+    refetchTasks();
+    toast({ title: "Reloaded latest version" });
   };
 
   return (
